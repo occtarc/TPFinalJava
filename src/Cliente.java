@@ -81,7 +81,7 @@ public class Cliente {
                             if(subastaActiva){
                                 objectOut.writeObject(participante.realizarOferta());
                             }else{
-                                System.out.println("Hay una subasta activa, q hacemos?");
+                                System.out.println("Espera a que haya una subasta activa");
                             }
                             break;
                         case 2:
