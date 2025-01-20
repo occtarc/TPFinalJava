@@ -1,6 +1,8 @@
 import java.io.Serializable;
+import java.util.Observable;
 
 public class Subasta implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Articulo articulo;
     private int tiempo;
     private Subastador subastador;
@@ -15,11 +17,24 @@ public class Subasta implements Serializable {
         this.ofertaMayor = null;
     }
 
-    public Articulo getArticulo() {return articulo;}
-    public int getTiempo(){return tiempo;}
-    public Subastador getSubastador() {return subastador;}
-    public boolean getFinalizada(){return finalizada;}
+    public Articulo getArticulo() {return this.articulo;}
+    public int getTiempo(){return this.tiempo;}
+    public Subastador getSubastador() {return this.subastador;}
+    public boolean getFinalizada(){return this.finalizada;}
     public void setFinalizada(boolean finalizada){this.finalizada = finalizada;}
-    public Oferta getOfertaMayor(){return ofertaMayor;}
+    public Oferta getOfertaMayor(){return this.ofertaMayor;}
     public void setOfertaMayor(Oferta ofertaMayor){this.ofertaMayor = ofertaMayor;}
+
+    @Override
+    public String toString() {
+        return String.format(
+                        "%s \n" +
+                        "Tiempo Inicial: %d \n" +
+                        "Subastador: %s \n" +
+                        "Estado: %s \n" +
+                        "Monto oferta mayor: $%.2f \n" +
+                                "Ofertante: %s",
+        this.articulo ,this.tiempo,this.subastador.getNombre(), this.finalizada ? "Finalizada" : "Activa", this.ofertaMayor == null ? 0 : this.ofertaMayor.getMonto(),
+                this.ofertaMayor == null ? "-" : this.ofertaMayor.getParticipante());
+    }
 }

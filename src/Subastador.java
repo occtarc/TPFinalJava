@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.Scanner;
 
-public class Subastador extends Usuario {
+public class Subastador extends Usuario implements Serializable {
 
     public Subastador(String nombre, String email) {
         super(nombre, email, Rol.SUBASTADOR);

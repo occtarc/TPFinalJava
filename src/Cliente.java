@@ -1,7 +1,4 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -10,80 +7,86 @@ public class Cliente {
     private static final String DIRECCION_SERVIDOR = "localhost";
     private static final int PUERTO = 5555;
     private static Socket socket;
+    private static boolean subastadorConectado;
+    private static boolean subastaActiva;
 
     public Cliente(){}
 
     public static void main (String[] args){
         Cliente.definirUsuario();
-        ObjectInputStream objectIn = null;
-        ObjectOutputStream objectOut = null;
-        DataInputStream dataIn = null;
-        DataOutputStream dataOut = null;
 
         try {
             Cliente.socket = new Socket(Cliente.DIRECCION_SERVIDOR,Cliente.PUERTO);
-            objectOut = new ObjectOutputStream(socket.getOutputStream());
-            objectIn = new ObjectInputStream(socket.getInputStream());
-            dataOut = new DataOutputStream(socket.getOutputStream());
-            dataIn = new DataInputStream(socket.getInputStream());
+            ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
+            DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
+            DataInputStream dataIn = new DataInputStream(socket.getInputStream());
             objectOut.writeObject(Cliente.usuario);
-            String mensajeConexionEstablecida = dataIn.readUTF();
-            System.out.println(mensajeConexionEstablecida);
             Scanner scanner = new Scanner(System.in);
             int opcion;
             boolean salir = false;
+
+            new Thread(()->{
+                try{
+                    while(true){
+                        Object mensaje = objectIn.readObject();
+                        System.out.println("[Notificación del servidor]: " + mensaje);
+                        if(mensaje instanceof String){
+                            String msg = (String) mensaje;
+                            if(msg.contains("Ya hay una subasta activa") || msg.contains("Se ha iniciado una subasta")){
+                                subastaActiva = true;
+                            }
+                            if(msg.contains("La subasta ha finalizado")){
+                                subastaActiva = false;
+                            }
+                        }
+                    }
+                }catch (EOFException e){
+                    System.exit(0);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }).start();
 
             if(Cliente.usuario.getRol() == Rol.SUBASTADOR){
                 Subastador subastador = (Subastador)Cliente.usuario;
                 while(!salir){
                     System.out.println("1- Iniciar una subasta");
-                    System.out.println("2- Ver subasta actual");
-                    System.out.println("3- Salir del sistema");
+                    System.out.println("2- Salir del sistema");
 
                     opcion = scanner.nextInt();
                     dataOut.writeInt(opcion);
+
                     switch (opcion){
                         case 1:
-                            objectOut.writeObject(new Subasta(subastador.generarArticuloASubastar(), subastador.fijarTiempoSubasta(), (Subastador)Cliente.usuario));
-                            System.out.println(dataIn.readUTF());
-                            break;
-                        case 2:
-                            Subasta subasta = (Subasta) objectIn.readObject();
-                            if (subasta == null){
-                                System.out.println("Aún no hay una subasta en curso");
-                            }else{
-                                System.out.println(subasta);
+                            if(!subastaActiva){
+                                objectOut.writeObject(new Subasta(subastador.generarArticuloASubastar(), subastador.fijarTiempoSubasta(), (Subastador)Cliente.usuario));
+                                subastaActiva = true;
                             }
                             break;
-                        case 3:
+                        case 2:
                             salir = true;
                             break;
-                        default:
-                            System.out.println(dataIn.readUTF());
                     }
                 }
             }else{
                 Participante participante = (Participante) Cliente.usuario;
                 while(!salir){
                     System.out.println("1- Realizar una oferta");
-                    System.out.println("2- Ver subasta actual");
-                    System.out.println("3- Salir del sistema");
-
+                    System.out.println("2- Salir del sistema");
                     opcion = scanner.nextInt();
                     dataOut.writeInt(opcion);
                     switch (opcion){
                         case 1:
-                            objectOut.writeObject(participante.realizarOferta());
+                            if(subastaActiva){
+                                objectOut.writeObject(participante.realizarOferta());
+                            }else{
+                                System.out.println("Hay una subasta activa, q hacemos?");
+                            }
                             break;
                         case 2:
-                            Subasta subasta = (Subasta) objectIn.readObject();
-                            System.out.println(subasta);
-                            break;
-                        case 3:
                             salir = true;
                             break;
-                        default:
-                            System.out.println(dataIn.readUTF());
                     }
                 }
             }

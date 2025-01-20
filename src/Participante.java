@@ -25,4 +25,10 @@ public class Participante extends Usuario implements Serializable {
         }while(!ofertaValida);
         return new Oferta(montoOferta,this);
     }
+
+    @Override
+    public String toString() {
+        return String.format("Nombre: %s" +
+                "Email: %s",getNombre(),getEmail());
+    }
 }

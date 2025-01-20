@@ -11,4 +11,12 @@ public class Oferta implements Serializable {
 
     public float getMonto(){return monto;}
     public Participante getParticipante(){return participante;}
+
+    @Override
+    public String toString() {
+        return "Oferta{" +
+                "monto=" + monto +
+                ", participante=" + participante +
+                '}';
+    }
 }

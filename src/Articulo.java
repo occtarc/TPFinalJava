@@ -18,7 +18,7 @@ public class Articulo implements Serializable {
     @Override
     public String toString(){
         return String.format(
-                        "Articulo: %s \n" +
+                        "Nombre: %s \n" +
                         "Descripcion: %s \n" +
                         "Precio Base: $%.2f"
                         ,nombre,descripcion,precioBase);
