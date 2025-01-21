@@ -15,20 +15,20 @@ public class Servidor{
     private static Timer temporizador;
     private static ArrayList<ObjectOutputStream> objectosActualizaciones = new ArrayList<>();
 
-    private static void enviarActualizacionGlobal(int opcion){
+    private static void enviarActualizacionGlobal(int opcion) {
         String mensaje = null;
-        switch (opcion){
-            case 1 :
+        switch (opcion) {
+            case 1:
                 mensaje = String.format("Se ha iniciado una subasta. \n" +
                         "Subastador: %s\n" +
                         "Producto a subastar: \n%s\n" +
-                        "Duracion de la subasta: %d",subasta.getSubastador().getNombre(), subasta.getArticulo() , subasta.getTiempo());
+                        "Duracion de la subasta: %d", subasta.getSubastador().getNombre(), subasta.getArticulo(), subasta.getTiempo());
                 break;
             case 2:
-                if(subasta.getOfertaMayor() == null){
-                    mensaje = "La subasta ha finalizado sin ofertas para el siguiente articulo: \n" + subasta.getArticulo() ;
-                }else{
-                    mensaje = String.format( "La subasta ha finalizado.\n" +
+                if (subasta.getOfertaMayor() == null) {
+                    mensaje = "La subasta ha finalizado sin ofertas para el siguiente articulo: \n" + subasta.getArticulo();
+                } else {
+                    mensaje = String.format("La subasta ha finalizado.\n" +
                             "Ganador: %s\n" +
                             "Monto final: $%.2f", subasta.getOfertaMayor().getParticipante().getNombre(), subasta.getOfertaMayor().getMonto());
 
@@ -37,22 +37,28 @@ public class Servidor{
             case 3:
                 mensaje = String.format("Se ha registrado una nueva oferta mayor \n" +
                         "Ofertante: %s\n" +
-                        "Monto: $%.2f", subasta.getOfertaMayor().getParticipante().getNombre(), subasta.getOfertaMayor().getMonto());;
+                        "Monto: $%.2f", subasta.getOfertaMayor().getParticipante().getNombre(), subasta.getOfertaMayor().getMonto());
+                ;
                 break;
             case 4:
                 mensaje = "Quedan 10 segundos para que finalice la subasta!";
+                break;
+            case 5:
+                mensaje = "Subastador desconectado! Fin de la subasta.";
+                break;
         }
 
-        for (ObjectOutputStream objOut : objectosActualizaciones){
-            try{
-                objOut.writeObject(mensaje);
-                objOut.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (!objectosActualizaciones.isEmpty()) {
+            for (ObjectOutputStream objOut : objectosActualizaciones) {
+                try {
+                    objOut.writeObject(mensaje);
+                    objOut.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
-
     private static void enviarMensajeIndividual(String mensaje, ObjectOutputStream objOut){
         try {
             objOut.writeObject(mensaje);
@@ -81,6 +87,10 @@ public class Servidor{
                 }
             }
         },0,1000);
+    }
+
+    private static void finalizarTemporizador(){
+        temporizador.cancel();
     }
 
     public static void main(String[] args){
@@ -142,36 +152,50 @@ public class Servidor{
             while(true){
                 try {
                     opcion = dataIn.readInt();
-                        switch(opcion){
-                            case 1:
-                                System.out.println("Prueba 1");
-                                if(!subastaActiva){
-                                    System.out.println("Prueba 2");
-                                    enviarMensajeIndividual("Espera a que haya una subasta activa para realizar una oferta",objectOut);
-                                }else{
-                                    System.out.println("Prueba 3");
-                                    Oferta ofertaCliente = (Oferta) objectIn.readObject();
-                                    if(Servidor.subasta.getOfertaMayor() == null || ofertaCliente.getMonto() > Servidor.subasta.getOfertaMayor().getMonto() ){
-                                        Servidor.subasta.setOfertaMayor(ofertaCliente);
-                                        temporizador.cancel();
-                                        tiempoRestante = subasta.getTiempo();
-                                        iniciarTemporizador();
-                                        System.out.println("Actualizacion realizada, nueva oferta mayor: " + Servidor.subasta.getOfertaMayor().getMonto());
-                                        System.out.println(Servidor.subasta.getOfertaMayor());
-                                        enviarMensajeIndividual("Oferta recibida correctamente. Actualmente tu oferta es la mayor", objectOut);
-                                        enviarActualizacionGlobal(3);
-                                    }else{
-                                        enviarMensajeIndividual("Oferta rechazada. La oferta realizada no supera el monto de la oferta mayor", objectOut);
-                                    }
+                    switch (opcion) {
+                        case 1:
+                            System.out.println("Prueba 1");
+                            if (!subastaActiva) {
+                                System.out.println("Prueba 2");
+                                enviarMensajeIndividual("Espera a que haya una subasta activa para realizar una oferta", objectOut);
+                            } else {
+                                System.out.println("Prueba 3");
+                                Oferta ofertaCliente = (Oferta) objectIn.readObject();
+                                if ((Servidor.subasta.getOfertaMayor() == null && ofertaCliente.getMonto() > Servidor.subasta.getArticulo().getPrecioBase()) || ofertaCliente.getMonto() > Servidor.subasta.getOfertaMayor().getMonto()) {
+                                    Servidor.subasta.setOfertaMayor(ofertaCliente);
+                                    temporizador.cancel();
+                                    tiempoRestante = subasta.getTiempo();
+                                    iniciarTemporizador();
+                                    System.out.println("Actualizacion realizada, nueva oferta mayor: " + Servidor.subasta.getOfertaMayor().getMonto());
+                                    System.out.println(Servidor.subasta.getOfertaMayor());
+                                    enviarMensajeIndividual("Oferta recibida correctamente. Actualmente tu oferta es la mayor", objectOut);
+                                    enviarActualizacionGlobal(3);
+                                } else {
+                                    enviarMensajeIndividual("Oferta rechazada. La oferta realizada no supera el monto de la oferta mayor", objectOut);
                                 }
-                                break;
-                            case 2:
-                            default:
-                                enviarMensajeIndividual("Debes ingresar una opción valida", objectOut);
-                        }
+                            }
+                            break;
+                        case 2:
+                        default:
+                            enviarMensajeIndividual("Debes ingresar una opción valida", objectOut);
+                    }
+                }catch (IOException e){
+                    System.out.println("El cliente se ha desconectado: " + socket.getInetAddress());
+                    manejarDesconexionParticipante();
+                    break; // Salir del metodo run
                 }catch (Exception e){
                     e.printStackTrace();
                 }
+            }
+        }
+
+        private void manejarDesconexionParticipante() {
+            try {
+                objectosActualizaciones.remove(objectOut);
+                socket.close();
+                System.out.println("Recursos liberados para el cliente desconectado.");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -219,10 +243,27 @@ public class Servidor{
                         default:
                             enviarMensajeIndividual("Debes ingresar una opción valida", objectOut);
                     }
+                }catch (IOException e){
+                    System.out.println("El cliente se ha desconectado: " + socket.getInetAddress());
+                    manejarDesconexionSubastador();
+                    break;
                 }catch (Exception e){
                     e.printStackTrace();
                 }
+            }
+        }
 
+        private void manejarDesconexionSubastador() {
+            try {
+                objectosActualizaciones.remove(objectOut);
+                socket.close();
+                Servidor.subastadorConectado = false;
+                Servidor.subastaActiva = false;
+                System.out.println("El subastador se ha desconectado.");
+                finalizarTemporizador();
+                enviarActualizacionGlobal(5);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

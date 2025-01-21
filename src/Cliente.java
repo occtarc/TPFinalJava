@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 
 public class Cliente {
@@ -24,24 +25,24 @@ public class Cliente {
             objectOut.writeObject(Cliente.usuario);
             Scanner scanner = new Scanner(System.in);
             int opcion;
-            boolean salir = false;
 
             new Thread(()->{
                 try{
                     while(true){
                         Object mensaje = objectIn.readObject();
-                        System.out.println("[Notificación del servidor]: " + mensaje);
+                        System.out.println("\n[Notificación del servidor]: " + mensaje);
+                        System.out.print("[Opción (1 | 2)]> ");
                         if(mensaje instanceof String){
                             String msg = (String) mensaje;
                             if(msg.contains("Ya hay una subasta activa") || msg.contains("Se ha iniciado una subasta")){
                                 subastaActiva = true;
                             }
-                            if(msg.contains("La subasta ha finalizado")){
+                            else if(msg.contains("La subasta ha finalizado") || msg.contains("Subastador desconectado! Fin de la subasta.")){
                                 subastaActiva = false;
                             }
                         }
                     }
-                }catch (EOFException e){
+                }catch (EOFException | SocketException e){
                     System.exit(0);
                 }catch(Exception e){
                     e.printStackTrace();
@@ -50,10 +51,9 @@ public class Cliente {
 
             if(Cliente.usuario.getRol() == Rol.SUBASTADOR){
                 Subastador subastador = (Subastador)Cliente.usuario;
-                while(!salir){
+                while(true){
                     System.out.println("1- Iniciar una subasta");
                     System.out.println("2- Salir del sistema");
-
                     opcion = scanner.nextInt();
                     dataOut.writeInt(opcion);
 
@@ -65,13 +65,13 @@ public class Cliente {
                             }
                             break;
                         case 2:
-                            salir = true;
+                            desconexion();
                             break;
                     }
                 }
             }else{
                 Participante participante = (Participante) Cliente.usuario;
-                while(!salir){
+                while(true){
                     System.out.println("1- Realizar una oferta");
                     System.out.println("2- Salir del sistema");
                     opcion = scanner.nextInt();
@@ -85,17 +85,14 @@ public class Cliente {
                             }
                             break;
                         case 2:
-                            salir = true;
+                            desconexion();
                             break;
                     }
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
 
     public static void definirUsuario(){
@@ -128,7 +125,14 @@ public class Cliente {
         }
     }
 
+    public static void desconexion(){
+        try {
+            if (socket != null) socket.close();
+            System.exit(0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     public static Usuario getUsuario(){return usuario;}
     public static void setUsuario(Usuario usuario){Cliente.usuario = usuario;}
-
 }
