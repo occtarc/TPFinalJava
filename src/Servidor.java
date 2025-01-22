@@ -1,9 +1,12 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.time.LocalDateTime;
 
 public class Servidor{
     private static final int PUERTO = 5555;
@@ -14,6 +17,7 @@ public class Servidor{
     private static int tiempoRestante;
     private static Timer temporizador;
     private static ArrayList<ObjectOutputStream> objectosActualizaciones = new ArrayList<>();
+    private static String carpetaSubastas = "RegistroSubastas";
 
     private static void enviarActualizacionGlobal(int opcion) {
         String mensaje = null;
@@ -31,7 +35,7 @@ public class Servidor{
                     mensaje = String.format("La subasta ha finalizado.\n" +
                             "Ganador: %s\n" +
                             "Monto final: $%.2f", subasta.getOfertaMayor().getParticipante().getNombre(), subasta.getOfertaMayor().getMonto());
-
+                    almacenarSubasta();
                 }
                 break;
             case 3:
@@ -127,6 +131,39 @@ public class Servidor{
             e.printStackTrace();
         }
 
+    }
+
+    private static void almacenarSubasta(){
+        LocalDateTime fecha = LocalDateTime.now();
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String fechaFormateada = fecha.format(formato);
+
+        // Crear carpeta si no existe
+        File carpeta = new File(carpetaSubastas);
+        if (!carpeta.exists()) {
+            if (carpeta.mkdir()) {
+                System.out.println("Carpeta creada: " + carpetaSubastas);
+            } else {
+                System.out.println("Error al crear la carpeta.");
+                return;
+            }
+        }
+
+        String nombreArchivo = fecha.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss")) + ".txt";
+        File archivo = new File(carpeta, nombreArchivo);
+
+        try (FileWriter escritor = new FileWriter(archivo)) {
+            String texto = "Subasta del día: " + fechaFormateada +
+                            "\nSubastador: \n" + subasta.getSubastador().toString() +
+                            "Artículo: \n" + subasta.getArticulo().toString() +
+                            "\nGanador de la subasta: \nParticipante:\n" + subasta.getOfertaMayor().getParticipante().toString() +
+                            "\nOferta mayor: " + subasta.getOfertaMayor().getMonto() + "\n";
+            escritor.write(texto);
+            System.out.println("Subasta almacenada en: " + archivo.getAbsolutePath());
+        } catch (IOException e) {
+            System.out.println("Ocurrió un error al escribir en el archivo.");
+            e.printStackTrace();
+        }
     }
 
     private static class HiloParticipante implements Runnable{

@@ -57,4 +57,8 @@ public class Subastador extends Usuario implements Serializable {
         return tiempoEnSegundos;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Nombre: %s\nEmail: %s \n", this.getNombre(), this.getEmail());
+    }
 }

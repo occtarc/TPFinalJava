@@ -28,7 +28,6 @@ public class Participante extends Usuario implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Nombre: %s" +
-                "Email: %s",getNombre(),getEmail());
+        return String.format("Nombre: %s \nEmail: %s",getNombre(),getEmail());
     }
 }
