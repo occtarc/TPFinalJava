@@ -153,13 +153,13 @@ public class Servidor{
                                 "Subastador: %s\n" +
                                 "Producto: \n%s\n" +
                                 "Tiempo restante: %d segundos\n" +
-                                "Mayor oferta actual: $%.2f",
+                                "%s",
                                 subasta.getSubastador().getNombre(),
                                 subasta.getArticulo(),
                                 Servidor.tiempoRestante,
                                 subasta.getOfertaMayor() != null
-                                ? subasta.getOfertaMayor().getMonto()
-                                : subasta.getArticulo().getPrecioBase())
+                                ? "Mayor oferta actual: $" + subasta.getOfertaMayor().getMonto()
+                                : "Aun no hay ofertas para el articulo")
                         ,objectOut);
             }
             int opcion;
@@ -172,7 +172,8 @@ public class Servidor{
                                 enviarMensajeIndividual("Espera a que haya una subasta activa para realizar una oferta", objectOut);
                             } else {
                                 Oferta ofertaCliente = (Oferta) objectIn.readObject();
-                                if ((Servidor.subasta.getOfertaMayor() == null && ofertaCliente.getMonto() > Servidor.subasta.getArticulo().getPrecioBase()) || ofertaCliente.getMonto() > Servidor.subasta.getOfertaMayor().getMonto()) {
+                                if ((Servidor.subasta.getOfertaMayor() == null && ofertaCliente.getMonto() >= Servidor.subasta.getArticulo().getPrecioBase()) ||
+                                        (Servidor.subasta.getOfertaMayor() != null && ofertaCliente.getMonto() >= Servidor.subasta.getOfertaMayor().getMonto())) {
                                     Servidor.subasta.setOfertaMayor(ofertaCliente);
                                     temporizador.cancel();
                                     tiempoRestante = subasta.getTiempo();
@@ -180,12 +181,15 @@ public class Servidor{
                                     System.out.println("Actualizacion realizada, nueva oferta mayor: " + Servidor.subasta.getOfertaMayor().getMonto());
                                     enviarMensajeIndividual("Oferta recibida correctamente. Actualmente tu oferta es la mayor", objectOut);
                                     enviarActualizacionGlobal(3);
-                                } else {
+                                } else if(Servidor.subasta.getOfertaMayor() == null && Servidor.subasta.getArticulo().getPrecioBase() > ofertaCliente.getMonto()) {
+                                    enviarMensajeIndividual("Oferta rechazada. La oferta realizada no supera el precio base", objectOut);
+                                }else{
                                     enviarMensajeIndividual("Oferta rechazada. La oferta realizada no supera el monto de la oferta mayor", objectOut);
                                 }
                             }
                             break;
                         case 2:
+                            break;
                         default:
                             enviarMensajeIndividual("Debes ingresar una opción valida", objectOut);
                     }
