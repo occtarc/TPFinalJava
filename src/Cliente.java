@@ -30,11 +30,11 @@ public class Cliente {
                 try{
                     while(true){
                         Object mensaje = objectIn.readObject();
-                        System.out.println("\n[Notificación del servidor]: " + mensaje);
-                        System.out.print("[Opción (1 | 2)]> ");
+                        System.out.println("\n[Notificacion del servidor]: " + mensaje);
+                        System.out.print("[Opcion (1 | 2)]> ");
                         if(mensaje instanceof String){
                             String msg = (String) mensaje;
-                            if(msg.contains("Ya hay una subasta activa") || msg.contains("Se ha iniciado una subasta")){
+                            if(msg.contains("Ya hay una subasta activa") || msg.contains("Se ha iniciado una subasta") || msg.contains("Hay una subasta en curso")){
                                 subastaActiva = true;
                             }
                             else if(msg.contains("La subasta ha finalizado") || msg.contains("Subastador desconectado! Fin de la subasta.")){
